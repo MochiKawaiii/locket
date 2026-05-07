@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin · Đăng nhập</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+            --bg-color: #050505;
+            --card-bg: rgba(20, 20, 20, 0.7);
+            --text-color: #fff;
+            --text-secondary: #b0b0b0;
+            --input-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: 1px solid rgba(255, 215, 0, 0.15);
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 0% 0%, hsla(50, 100%, 10%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(45, 100%, 12%, 1) 0, transparent 50%);
+            color: var(--text-color);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0;
+        }
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            width: 100%; max-width: 380px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        h1 { margin: 0 0 8px; font-size: 1.4em; }
+        p.sub { color: var(--text-secondary); margin: 0 0 24px; font-size: 0.9em; }
+        label { display: block; font-size: 0.85em; color: var(--text-secondary); margin-bottom: 6px; }
+        input {
+            width: 100%; box-sizing: border-box;
+            background: var(--input-bg); color: var(--text-color);
+            border: 1px solid rgba(255,215,0,0.2); border-radius: 12px;
+            padding: 12px 14px; font-size: 1em; font-family: inherit;
+            margin-bottom: 16px;
+        }
+        input:focus { outline: none; border-color: rgba(255,215,0,0.6); }
+        button {
+            width: 100%; padding: 12px;
+            background: var(--primary-gradient); color: #111;
+            border: none; border-radius: 12px;
+            font-weight: 600; font-size: 1em; font-family: inherit;
+            cursor: pointer;
+        }
+        .error {
+            color: #ff6b6b; font-size: 0.9em; margin-bottom: 16px;
+            background: rgba(255,107,107,0.08); padding: 10px 12px;
+            border-radius: 10px; border: 1px solid rgba(255,107,107,0.25);
+        }
+    </style>
+</head>
+<body>
+    <form class="card" method="POST" action="/admin/login">
+        <h1>Admin</h1>
+        <p class="sub">Nhập mật khẩu để truy cập bảng điều khiển.</p>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <label for="pw">Mật khẩu</label>
+        <input id="pw" name="password" type="password" autofocus required>
+        <button type="submit">Đăng nhập</button>
+    </form>
+</body>
+</html>

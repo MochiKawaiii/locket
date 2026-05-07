@@ -1,4 +1,9 @@
 .env
 /__pycache__
 queue_state.json
-/__pycache__
+accounts.json
+tokens.json
+*.bak
+locket.db
+locket.db-wal
+locket.db-shm

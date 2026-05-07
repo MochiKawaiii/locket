@@ -1,0 +1,44 @@
+[Unit]
+Description=Locket Gold Username (Flask + gunicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=locket
+Group=locket
+WorkingDirectory=/home/locket/LocketGoldUsername
+
+# Reads EMAIL, PASSWORD, ADMIN_PASSWORD, FLASK_SECRET_KEY, BEHIND_HTTPS,
+# gist_token_url, TELEGRAM_*, etc. systemd ignores blank lines and `# comments`.
+EnvironmentFile=/home/locket/LocketGoldUsername/.env
+
+ExecStart=/home/locket/LocketGoldUsername/.venv/bin/gunicorn \
+    --config /home/locket/LocketGoldUsername/gunicorn.conf.py \
+    wsgi:app
+
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+# Hardening — none of these break the app, all reduce blast radius if it's ever exploited.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/locket/LocketGoldUsername
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+# Send stdout/stderr to journald — view with `journalctl -u locket -f`.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=locket
+
+[Install]
+WantedBy=multi-user.target

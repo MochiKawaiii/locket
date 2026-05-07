@@ -1,9 +1,10 @@
 import json
 import requests
 import time
-import os
 import random
 import dotenv
+
+from .tokens import tokens_store
 
 dotenv.load_dotenv()
 
@@ -62,22 +63,10 @@ class LocketAPI:
         """
         url = "https://api.revenuecat.com/v1/receipts"
 
-        gist_url = os.getenv("gist_token_url")
-        if not gist_url:
-            raise Exception("gist_token_url environment variable is not set")
-
-        try:
-            response = requests.get(gist_url)
-            if not response.ok:
-                raise Exception(f"Failed to fetch token from URL: {response.text}")
-            tokens = response.json()
-        except Exception as e:
-            raise Exception(f"Error loading tokens from URL: {str(e)}")
-
+        tokens = tokens_store.get_payloads()
         if not tokens:
             raise Exception("Token list is empty")
 
-        # Select random payload
         payload_data = random.choice(tokens)
 
         # Update dynamic fields

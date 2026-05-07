@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin · Locket Gold</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+            --bg-color: #050505;
+            --card-bg: rgba(20, 20, 20, 0.7);
+            --text-color: #fff;
+            --text-secondary: #b0b0b0;
+            --input-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 215, 0, 0.1);
+            --glass-border: 1px solid rgba(255, 215, 0, 0.15);
+            --danger: #ff6b6b;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 0% 0%, hsla(50, 100%, 10%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(45, 100%, 12%, 1) 0, transparent 50%);
+            color: var(--text-color);
+            margin: 0; padding: 24px 16px;
+        }
+        .wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 4px 8px;
+        }
+        header h1 { margin: 0; font-size: 1.3em; font-weight: 600; }
+        header .actions { display: flex; gap: 8px; }
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: var(--glass-border);
+            border-radius: 18px;
+            padding: 22px 22px 18px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        .card h2 {
+            margin: 0 0 14px; font-size: 1.05em; font-weight: 600;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .pill {
+            font-size: 0.7em; padding: 3px 9px; border-radius: 999px;
+            background: rgba(255,215,0,0.12); color: #fdd84e; font-weight: 500;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th, td {
+            text-align: left; padding: 8px 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        th { color: var(--text-secondary); font-weight: 500; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.04em; }
+        td.mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.82em; color: var(--text-secondary); }
+        td .username { color: #fff; }
+        .row-form { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; margin-top: 14px; }
+        .row-form input, textarea {
+            background: var(--input-bg); color: var(--text-color);
+            border: 1px solid rgba(255,215,0,0.18); border-radius: 10px;
+            padding: 8px 10px; font-size: 0.9em; font-family: inherit;
+        }
+        textarea { width: 100%; box-sizing: border-box; min-height: 100px; resize: vertical; font-family: ui-monospace, monospace; }
+        .row-form input:focus, textarea:focus { outline: none; border-color: rgba(255,215,0,0.6); }
+        button {
+            background: var(--primary-gradient); color: #111;
+            border: none; border-radius: 10px;
+            padding: 8px 14px; font-weight: 600; font-size: 0.88em; font-family: inherit;
+            cursor: pointer; white-space: nowrap;
+        }
+        button.ghost { background: rgba(255,255,255,0.06); color: #fff; }
+        button.danger { background: rgba(255,107,107,0.15); color: var(--danger); }
+        button.icon { padding: 6px 10px; font-size: 0.95em; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .empty { color: var(--text-secondary); padding: 14px 0; text-align: center; font-size: 0.9em; }
+        .status-completed { color: #4ade80; }
+        .status-error { color: var(--danger); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } .row-form { grid-template-columns: 1fr 1fr; } }
+        .add-tokens { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .add-tokens .actions-row { display: flex; gap: 8px; }
+        details summary { cursor: pointer; color: var(--text-secondary); font-size: 0.85em; }
+        details pre {
+            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px;
+            overflow-x: auto; font-size: 0.78em; max-height: 200px;
+        }
+        .footer-note { color: var(--text-secondary); font-size: 0.78em; padding: 8px 4px 24px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <h1>⚙️ Admin · Locket Gold</h1>
+            <div class="actions">
+                <a href="/" style="text-decoration:none;"><button class="ghost">← Trang chính</button></a>
+                <form method="POST" action="/admin/logout" style="margin:0;"><button class="ghost" type="submit">Đăng xuất</button></form>
+            </div>
+        </header>
+
+        <section class="card">
+            <h2>Tài khoản Locket <span class="pill" id="account-count">…</span></h2>
+            <table id="accounts-table">
+                <thead><tr><th>Email</th><th>Slot ID</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div class="row-form">
+                <input id="acc-email" type="email" placeholder="email@example.com" autocomplete="off">
+                <input id="acc-pw" type="password" placeholder="mật khẩu" autocomplete="new-password">
+                <button class="ghost" id="acc-test">Test</button>
+                <button id="acc-add">Thêm</button>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Token RevenueCat <span class="pill" id="token-count">…</span></h2>
+            <table id="tokens-table">
+                <thead><tr><th>#</th><th>app_user_id (template)</th><th>Payload</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div class="add-tokens">
+                <textarea id="token-raw" placeholder='Dán JSON payload vào đây, ví dụ:&#10;{&#10;  "app_user_id": "...",&#10;  "fetch_token": "...",&#10;  "platform": "ios"&#10;}'></textarea>
+                <div class="actions-row">
+                    <button id="token-add">Thêm payload</button>
+                    <span class="footer-note" style="padding:6px 0; margin-left:auto;">Để trống tokens.json → fallback gist_token_url</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid-2">
+            <section class="card">
+                <h2>Đang xử lý <span class="pill" id="proc-count">0</span></h2>
+                <table id="processing-table">
+                    <thead><tr><th>Slot</th><th>Username</th><th>Bắt đầu</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+            <section class="card">
+                <h2>Hàng đợi <span class="pill" id="wait-count">0</span></h2>
+                <table id="waiting-table">
+                    <thead><tr><th>#</th><th>Username</th><th>Đã chờ</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+
+        <section class="card">
+            <h2>Lịch sử gần đây</h2>
+            <table id="recent-table">
+                <thead><tr><th>Username</th><th>Slot</th><th>Status</th><th>Duration</th><th>Lúc</th><th>Lỗi</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <p class="footer-note">Queue snapshot tự refresh mỗi 2s · Accounts/Tokens refresh khi có thay đổi.</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const swalGlass = {
+            background: 'rgba(20,20,20,0.92)',
+            color: '#fff',
+            backdrop: 'rgba(0,0,0,0.6)',
+            confirmButtonColor: '#FDB931',
+            cancelButtonColor: '#444',
+        };
+        const $ = (sel) => document.querySelector(sel);
+
+        async function api(method, url, body) {
+            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(url, opts);
+            if (res.status === 401) {
+                window.location = '/admin/login';
+                throw new Error('unauthorized');
+            }
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.success === false) {
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+            return data;
+        }
+
+        function fmtTime(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            return d.toLocaleTimeString('vi-VN', { hour12: false });
+        }
+        function fmtDuration(s) { return s == null ? '—' : `${s.toFixed(1)}s`; }
+        function ago(iso) {
+            if (!iso) return '—';
+            const s = (Date.now() - new Date(iso).getTime()) / 1000;
+            if (s < 60) return `${Math.floor(s)}s`;
+            if (s < 3600) return `${Math.floor(s/60)}m`;
+            return `${Math.floor(s/3600)}h`;
+        }
+
+        // --- Accounts ---
+        async function loadAccounts() {
+            try {
+                const { accounts } = await api('GET', '/admin/api/accounts');
+                $('#account-count').textContent = `${accounts.length} account`;
+                const tbody = $('#accounts-table tbody');
+                tbody.innerHTML = '';
+                if (!accounts.length) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty">Chưa có account</td></tr>';
+                    return;
+                }
+                for (const a of accounts) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><span class="username">${a.email}</span></td>
+                        <td class="mono">${a.id.slice(0,8)}</td>
+                        <td style="text-align:right"><button class="icon danger" data-id="${a.id}">Xoá</button></td>`;
+                    tbody.appendChild(tr);
+                }
+                tbody.querySelectorAll('button[data-id]').forEach(btn => {
+                    btn.onclick = () => removeAccount(btn.dataset.id);
+                });
+            } catch (e) { console.error(e); }
+        }
+        async function addAccount() {
+            const email = $('#acc-email').value.trim();
+            const password = $('#acc-pw').value;
+            if (!email || !password) return;
+            try {
+                await api('POST', '/admin/api/accounts', { email, password });
+                $('#acc-email').value = ''; $('#acc-pw').value = '';
+                await loadAccounts();
+                Swal.fire({ ...swalGlass, icon: 'success', title: 'Đã thêm', timer: 1500, showConfirmButton: false });
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Không thêm được', text: e.message });
+            }
+        }
+        async function testAccount() {
+            const email = $('#acc-email').value.trim();
+            const password = $('#acc-pw').value;
+            if (!email || !password) return;
+            try {
+                const r = await api('POST', '/admin/api/accounts/test', { email, password });
+                if (r.success) {
+                    Swal.fire({ ...swalGlass, icon: 'success', title: 'Login OK', timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire({ ...swalGlass, icon: 'error', title: 'Login thất bại', text: r.error });
+                }
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Lỗi', text: e.message });
+            }
+        }
+        async function removeAccount(id) {
+            const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Xoá account?', text: 'Worker đang chạy sẽ dừng sau khi xong job hiện tại.', showCancelButton: true, confirmButtonText: 'Xoá' });
+            if (!ok.isConfirmed) return;
+            try {
+                await api('DELETE', `/admin/api/accounts/${id}`);
+                await loadAccounts();
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Lỗi', text: e.message });
+            }
+        }
+
+        // --- Tokens ---
+        async function loadTokens() {
+            try {
+                const { tokens } = await api('GET', '/admin/api/tokens');
+                $('#token-count').textContent = `${tokens.length} payload`;
+                const tbody = $('#tokens-table tbody');
+                tbody.innerHTML = '';
+                if (!tokens.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty">tokens.json rỗng — đang dùng gist fallback</td></tr>';
+                    return;
+                }
+                tokens.forEach((p, i) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="mono">${i}</td>
+                        <td class="mono">${(p.app_user_id || '—').toString().slice(0,40)}</td>
+                        <td><details><summary>Xem JSON</summary><pre>${JSON.stringify(p, null, 2)}</pre></details></td>
+                        <td style="text-align:right"><button class="icon danger" data-i="${i}">Xoá</button></td>`;
+                    tbody.appendChild(tr);
+                });
+                tbody.querySelectorAll('button[data-i]').forEach(btn => {
+                    btn.onclick = () => removeToken(parseInt(btn.dataset.i));
+                });
+            } catch (e) { console.error(e); }
+        }
+        async function addToken() {
+            const raw = $('#token-raw').value.trim();
+            if (!raw) return;
+            try {
+                await api('POST', '/admin/api/tokens', { raw });
+                $('#token-raw').value = '';
+                await loadTokens();
+                Swal.fire({ ...swalGlass, icon: 'success', title: 'Đã thêm', timer: 1500, showConfirmButton: false });
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Không hợp lệ', text: e.message });
+            }
+        }
+        async function removeToken(i) {
+            const ok = await Swal.fire({ ...swalGlass, icon: 'warning', title: 'Xoá payload?', showCancelButton: true, confirmButtonText: 'Xoá' });
+            if (!ok.isConfirmed) return;
+            try {
+                await api('DELETE', `/admin/api/tokens/${i}`);
+                await loadTokens();
+            } catch (e) {
+                Swal.fire({ ...swalGlass, icon: 'error', title: 'Lỗi', text: e.message });
+            }
+        }
+
+        // --- Queue ---
+        async function loadQueue() {
+            try {
+                const data = await api('GET', '/admin/api/queue');
+                $('#proc-count').textContent = data.processing.length;
+                $('#wait-count').textContent = data.waiting.length;
+
+                const procTbody = $('#processing-table tbody');
+                procTbody.innerHTML = '';
+                if (!data.processing.length) procTbody.innerHTML = '<tr><td colspan="3" class="empty">Idle</td></tr>';
+                for (const p of data.processing) {
+                    const email = data.workers[p.slot_id] || '—';
+                    procTbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td class="mono" title="${email}">${email}</td>
+                            <td><span class="username">${p.username || '—'}</span></td>
+                            <td class="mono">${ago(p.started_at)}</td>
+                        </tr>`);
+                }
+
+                const waitTbody = $('#waiting-table tbody');
+                waitTbody.innerHTML = '';
+                if (!data.waiting.length) waitTbody.innerHTML = '<tr><td colspan="3" class="empty">Empty</td></tr>';
+                for (const w of data.waiting) {
+                    waitTbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td class="mono">${w.position}</td>
+                            <td><span class="username">${w.username || '—'}</span></td>
+                            <td class="mono">${ago(w.added_at)}</td>
+                        </tr>`);
+                }
+
+                const recentTbody = $('#recent-table tbody');
+                recentTbody.innerHTML = '';
+                if (!data.recent.length) recentTbody.innerHTML = '<tr><td colspan="6" class="empty">Chưa có lịch sử</td></tr>';
+                for (const r of data.recent) {
+                    const cls = r.status === 'completed' ? 'status-completed' : 'status-error';
+                    const email = data.workers[r.slot_id];
+                    recentTbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td><span class="username">${r.username || '—'}</span></td>
+                            <td class="mono" title="${email || r.slot_id}">${(email || r.slot_id).slice(0,18)}</td>
+                            <td class="${cls}">${r.status}</td>
+                            <td class="mono">${fmtDuration(r.duration)}</td>
+                            <td class="mono">${fmtTime(r.completed_at)}</td>
+                            <td class="mono" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.error || ''}">${r.error || ''}</td>
+                        </tr>`);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Wire handlers
+        $('#acc-add').onclick = addAccount;
+        $('#acc-test').onclick = testAccount;
+        $('#token-add').onclick = addToken;
+
+        // Initial load + polling
+        loadAccounts();
+        loadTokens();
+        loadQueue();
+        setInterval(loadQueue, 2000);
+    </script>
+</body>
+</html>
