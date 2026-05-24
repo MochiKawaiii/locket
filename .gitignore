@@ -2,7 +2,6 @@
 __pycache__/
 queue_state.json
 accounts.json
-tokens.json
 *.bak
 locket.db
 locket.db-wal
