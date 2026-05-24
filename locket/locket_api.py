@@ -95,24 +95,33 @@ class LocketAPI:
             )
 
     def restorePurchase(self, uid):
-        """Restores the purchase using the provided token, trying them in order
-        (prioritizing 1 Year, then falling back to 1 Month packages)."""
+        """Restores the purchase using the provided token.
+
+        Returns:
+            dict: The JSON response from the API if successful.
+
+        Raises:
+            Exception: If the API request fails.
+        """
         url = "https://api.revenuecat.com/v1/receipts"
 
         tokens = tokens_store.get_payloads()
         if not tokens:
             raise Exception("Token list is empty")
 
-        # Sort tokens so that 1y (locket_3600_1y) is tried first, then 1m packages.
-        def token_priority(t):
-            pid = t.get("product_id", "")
-            if "1y" in pid or "3600" in pid:
-                return 0
-            if "399" in pid:
-                return 1
-            return 2
+        payload_data = random.choice(tokens)
 
-        sorted_tokens = sorted(tokens, key=token_priority)
+        # Update dynamic fields
+        payload_data["app_user_id"] = uid
+        if (
+            "attributes" in payload_data
+            and "$attConsentStatus" in payload_data["attributes"]
+        ):
+            payload_data["attributes"]["$attConsentStatus"]["updated_at_ms"] = int(
+                time.time() * 1000
+            )
+
+        payload = json.dumps(payload_data)
 
         headers = {
             "X-Is-Sandbox": "true",
@@ -120,33 +129,14 @@ class LocketAPI:
             "Connection": "keep-alive",
             "Content-Type": "application/json",
         }
-
-        last_err = None
-        for attempt_idx, payload_data in enumerate(sorted_tokens):
-            # Send only fetch_token, app_transaction, and app_user_id in the request payload
-            payload_copy = {
-                "fetch_token": payload_data.get("fetch_token"),
-                "app_transaction": payload_data.get("app_transaction"),
-                "app_user_id": uid
-            }
-            payload = json.dumps(payload_copy)
-
-            print(f"restorePurchase: trying token {payload_data.get('product_id')} (attempt {attempt_idx + 1}/{len(sorted_tokens)})")
-            try:
-                response = _post_with_proxy(url, headers=headers, data=payload, timeout=30)
-                # print(response.json())
-                if response.ok:
-                    return response.json()
-                else:
-                    last_err = Exception(
-                        f"API request failed with status code {response.status_code}: {response.text}"
-                    )
-            except Exception as e:
-                last_err = e
-            
-            print(f"restorePurchase: token {payload_data.get('product_id')} failed: {last_err}")
-        
-        raise last_err
+        response = _post_with_proxy(url, headers=headers, data=payload, timeout=30)
+        print(response.json())
+        if response.ok:
+            return response.json()
+        else:
+            raise Exception(
+                f"API request failed with status code {response.status_code}: {response.text}"
+            )
 
     def changeNameAccount(self, last="", first=""):
         """Changes the first and last name of the account.

@@ -191,6 +191,8 @@ def _migrate_tokens(conn):
     path = "tokens.json"
     if not os.path.exists(path):
         return
+    if not _table_empty(conn, "tokens"):
+        return
     try:
         with open(path) as f:
             data = json.load(f)
@@ -199,10 +201,6 @@ def _migrate_tokens(conn):
         return
     if not isinstance(data, list):
         return
-    
-    # Clear existing tokens to ensure we get the fresh set
-    conn.execute("DELETE FROM tokens")
-    
     now = time.time()
     inserted = 0
     for payload in data:
@@ -214,12 +212,8 @@ def _migrate_tokens(conn):
         )
         inserted += 1
     if inserted:
-        try:
-            os.rename(path, path + ".bak")
-            print(f"db: migrated {inserted} token payload(s) from {path} (renamed to {path}.bak)")
-        except Exception as e:
-            print(f"db: migrated {inserted} token payload(s), but failed to rename tokens.json: {e}")
-
+        os.rename(path, path + ".bak")
+        print(f"db: migrated {inserted} token payload(s) from {path}")
 
 
 def _migrate_queue_state(conn):
