@@ -123,20 +123,15 @@ class LocketAPI:
 
         last_err = None
         for attempt_idx, payload_data in enumerate(sorted_tokens):
-            # Create a copy so we don't mutate the original cached payload dictionary
-            payload_copy = json.loads(json.dumps(payload_data))
-            payload_copy["app_user_id"] = uid
-            if (
-                "attributes" in payload_copy
-                and "$attConsentStatus" in payload_copy["attributes"]
-            ):
-                payload_copy["attributes"]["$attConsentStatus"]["updated_at_ms"] = int(
-                    time.time() * 1000
-                )
-
+            # Send only fetch_token, app_transaction, and app_user_id in the request payload
+            payload_copy = {
+                "fetch_token": payload_data.get("fetch_token"),
+                "app_transaction": payload_data.get("app_transaction"),
+                "app_user_id": uid
+            }
             payload = json.dumps(payload_copy)
 
-            print(f"restorePurchase: trying token {payload_copy.get('product_id')} (attempt {attempt_idx + 1}/{len(sorted_tokens)})")
+            print(f"restorePurchase: trying token {payload_data.get('product_id')} (attempt {attempt_idx + 1}/{len(sorted_tokens)})")
             try:
                 response = _post_with_proxy(url, headers=headers, data=payload, timeout=30)
                 # print(response.json())
@@ -149,7 +144,7 @@ class LocketAPI:
             except Exception as e:
                 last_err = e
             
-            print(f"restorePurchase: token {payload_copy.get('product_id')} failed: {last_err}")
+            print(f"restorePurchase: token {payload_data.get('product_id')} failed: {last_err}")
         
         raise last_err
 
