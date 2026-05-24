@@ -1,5 +1,5 @@
 .env
-/__pycache__
+__pycache__/
 queue_state.json
 accounts.json
 tokens.json
@@ -7,3 +7,4 @@ tokens.json
 locket.db
 locket.db-wal
 locket.db-shm
+.venv/

@@ -95,6 +95,7 @@ class QueueManager:
 
     _TRANSIENT_MARKERS = (
         "status code 500", "status code 502", "status code 503", "status code 504",
+        "status code 529", "status code 429",
         "Internal Server Error", "Bad Gateway", "Service Unavailable",
         "Gateway Timeout", "ConnectionError", "ConnectTimeout",
         "ReadTimeout", "Timeout", "RemoteDisconnected", "ProtocolError",
@@ -106,8 +107,20 @@ class QueueManager:
 
     @classmethod
     def _is_transient(cls, exc):
-        msg = str(exc)
-        return any(m in msg for m in cls._TRANSIENT_MARKERS)
+        # Match by class names or parent classes
+        for base in exc.__class__.__mro__:
+            name = base.__name__
+            if any(k in name for k in ("Timeout", "ConnectionError", "ProtocolError")):
+                return True
+        
+        # Match by lowercase string message
+        msg = str(exc).lower()
+        for marker in cls._TRANSIENT_MARKERS:
+            if marker.lower() in msg:
+                return True
+        if any(t in msg for t in ("timed out", "timedout", "time out", "read timeout")):
+            return True
+        return False
 
     def call_on_slot(self, slot_id, api_fn_name, *args, **kwargs):
         """Invoke a LocketAPI method on one rotator slot. Refreshes the slot's
