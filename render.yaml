@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: locket-gold-unlocker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -c gunicorn.conf.py wsgi:app
+    envVars:
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: BEHIND_HTTPS
+        value: "1"
+      - key: EMAIL
+        sync: false
+      - key: PASSWORD
+        sync: false
+      - key: gist_token_url
+        value: "https://gist.githubusercontent.com/dummy/gist_id/raw/token.json"

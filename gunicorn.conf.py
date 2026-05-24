@@ -7,10 +7,12 @@ and you'd have N × workers threads for no extra throughput. Concurrency for
 HTTP requests is handled by `threads` instead.
 """
 
+import os
 import multiprocessing  # noqa: F401  (kept so users grep'ing for it find this comment)
 
-# Listen only on loopback — nginx terminates TLS and proxies to us.
-bind = "127.0.0.1:5001"
+# Listen on all interfaces (0.0.0.0) so Render/container hosts can route traffic.
+port = os.environ.get("PORT", "5001")
+bind = f"0.0.0.0:{port}"
 
 # One process. See module docstring.
 workers = 1
