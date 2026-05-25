@@ -99,6 +99,7 @@ class QueueManager:
         "Internal Server Error", "Bad Gateway", "Service Unavailable",
         "Gateway Timeout", "ConnectionError", "ConnectTimeout",
         "ReadTimeout", "Timeout", "RemoteDisconnected", "ProtocolError",
+        "token ingestion",
     )
     # Aggressive retry — Locket's getUserByUsername hits 502 in clusters,
     # then recovers within seconds. 8 attempts spread over ~30s gives most

@@ -97,11 +97,16 @@ class LocketAPI:
     def restorePurchase(self, uid):
         """Restores the purchase using the provided token.
 
+        Handles RevenueCat 529 ("fetch token is being ingested") by retrying
+        up to 3 times with backoff. Also validates that the Gold entitlement's
+        expires_date is in the future — an expired subscription counts as a
+        failure even if RevenueCat returns 200.
+
         Returns:
             dict: The JSON response from the API if successful.
 
         Raises:
-            Exception: If the API request fails.
+            Exception: If the API request fails or Gold is expired.
         """
         url = "https://api.revenuecat.com/v1/receipts"
 
@@ -129,14 +134,75 @@ class LocketAPI:
             "Connection": "keep-alive",
             "Content-Type": "application/json",
         }
-        response = _post_with_proxy(url, headers=headers, data=payload, timeout=30)
-        print(response.json())
-        if response.ok:
-            return response.json()
+
+        # Retry loop for 529 (token ingestion in progress)
+        max_retries = 4
+        resp_json = None
+        for attempt in range(max_retries):
+            if attempt > 0:
+                wait = 1.5 * attempt + random.random()
+                print(f"[restorePurchase] Retry {attempt}/{max_retries-1} after {wait:.1f}s...")
+                time.sleep(wait)
+
+            response = _post_with_proxy(url, headers=headers, data=payload, timeout=30)
+
+            if response.status_code == 529:
+                print(f"[restorePurchase] 529 (ingesting) for uid={uid}, attempt {attempt+1}")
+                continue
+
+            resp_json = response.json()
+            break
         else:
+            raise Exception(
+                "RevenueCat returned 529 (token ingestion) on all retries. "
+                "Please try again later."
+            )
+
+        if resp_json is None:
+            resp_json = response.json()
+
+        # Detailed logging for diagnosis
+        subscriber = resp_json.get("subscriber", {})
+        entitlements = subscriber.get("entitlements", {})
+        gold = entitlements.get("Gold", {})
+        subs = subscriber.get("subscriptions", {})
+        print(f"[restorePurchase] status={response.status_code} for uid={uid}")
+        print(f"[restorePurchase] entitlements keys: {list(entitlements.keys())}")
+        if gold:
+            print(f"[restorePurchase] Gold entitlement: product={gold.get('product_identifier')}, "
+                  f"expires={gold.get('expires_date')}")
+        else:
+            print(f"[restorePurchase] NO Gold entitlement found!")
+        if subs:
+            for sub_id, sub_data in subs.items():
+                print(f"[restorePurchase] subscription '{sub_id}': "
+                      f"expires={sub_data.get('expires_date')}, "
+                      f"sandbox={sub_data.get('is_sandbox')}")
+
+        if not response.ok:
             raise Exception(
                 f"API request failed with status code {response.status_code}: {response.text}"
             )
+
+        # Validate Gold entitlement expiry — prevent "fake success"
+        if gold and gold.get("expires_date"):
+            from datetime import datetime, timezone
+            try:
+                exp_str = gold["expires_date"]
+                # RevenueCat format: "2026-05-11T12:23:49Z"
+                exp_dt = datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                if exp_dt < now:
+                    days_ago = (now - exp_dt).days
+                    print(f"[restorePurchase] WARNING: Gold expired {days_ago} day(s) ago!")
+                    raise Exception(
+                        f"Token expired: Gold subscription ended {days_ago} day(s) ago "
+                        f"(expires={exp_str}). Need fresh token/receipt."
+                    )
+            except ValueError:
+                pass  # couldn't parse date, proceed anyway
+
+        return resp_json
 
     def changeNameAccount(self, last="", first=""):
         """Changes the first and last name of the account.
